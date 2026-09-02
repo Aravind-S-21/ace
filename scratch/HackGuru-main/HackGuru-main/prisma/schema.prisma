@@ -1,0 +1,391 @@
+// Prisma Schema for AllCollegeEvent AI Backend (HackGURU 2026)
+// Decoupled read/write contract matching external allcollegeevent.sql PostgreSQL schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventMode {
+  ONLINE
+  OFFLINE
+  HYBRID
+
+  @@map("event_mode_enum")
+}
+
+enum EventType {
+  HACKATHON
+  PROJECT
+  INTERNSHIP
+  WORKSHOP
+
+  @@map("event_type_enum")
+}
+
+enum InteractionType {
+  VIEW
+  CLICK
+  SAVE
+  REGISTER
+  SHARE
+  DISMISS
+
+  @@map("interaction_type_enum")
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  FLAGGED
+  REJECTED
+
+  @@map("verification_status_enum")
+}
+
+model User {
+  userId               BigInt                  @id @default(autoincrement()) @map("user_id")
+  fullName             String                  @map("full_name") @db.VarChar(150)
+  email                String                  @unique @db.VarChar(255)
+  department           String?                 @db.VarChar(150)
+  college              String?                 @db.VarChar(250)
+  location             String?                 @db.VarChar(150)
+  careerGoal           String?                 @map("career_goal") @db.VarChar(200)
+  skills               String[]
+  interests            String[]
+  preferredEventTypes  EventType[]             @map("preferred_event_types")
+  createdAt            DateTime?               @default(now()) @map("created_at")
+
+  githubConnection     GithubConnection?
+  studentAiSummary     StudentAiSummary?
+  studentSkills        StudentSkill[]
+  skillEvolutions      SkillEvolution[]
+  studentActivities    StudentActivity[]
+  eventParticipations  EventParticipation[]
+  interactions         UserInteraction[]
+  recommendations      Recommendation[]
+
+  @@map("users")
+}
+
+model Event {
+  eventId              BigInt                  @id @default(autoincrement()) @map("event_id")
+  title                String                  @db.VarChar(250)
+  description          String?
+  eventType            EventType               @map("event_type")
+  eventMode            EventMode               @default(HYBRID) @map("event_mode")
+  category             String                  @db.VarChar(150)
+  subcategories        String[]
+  tags                 String[]
+  organizerName        String                  @map("organizer_name") @db.VarChar(200)
+  organizerId          BigInt?                 @map("organizer_id")
+  location             String?                 @db.VarChar(250)
+  city                 String?                 @db.VarChar(100)
+  state                String?                 @db.VarChar(100)
+  country              String?                 @default("India") @db.VarChar(100)
+  startDate            DateTime?               @map("start_date")
+  endDate              DateTime?               @map("end_date")
+  deadline             DateTime?
+  registrationUrl      String?                 @map("registration_url")
+  bannerImageUrl       String?                 @map("banner_image_url")
+  isFree               Boolean                 @default(true) @map("is_free")
+  price                Decimal?                @db.Decimal(10, 2)
+  currency             String?                 @default("INR") @db.VarChar(10)
+  eligibilityCriteria  String?                 @map("eligibility_criteria")
+  targetBranches       String[]                @map("target_branches")
+  targetYears          Int[]                   @map("target_years")
+  skillsRequired       String[]                @map("skills_required")
+  status               String                  @default("ACTIVE") @db.VarChar(50)
+  createdAt            DateTime?               @default(now()) @map("created_at")
+  updatedAt            DateTime?               @default(now()) @map("updated_at")
+
+  organizer            Organizer?              @relation(fields: [organizerId], references: [organizerId], onDelete: SetNull)
+  aiAnalysis           EventAiAnalysis?
+  analytics            EventAnalytics?
+  hackathonDetails     HackathonDetail?
+  internshipDetails    InternshipDetail?
+  projectDetails       ProjectDetail?
+  workshopDetails      WorkshopDetail?
+  participations       EventParticipation[]
+  interactions         UserInteraction[]
+  recommendations      Recommendation[]
+
+  @@map("events")
+}
+
+model EventAiAnalysis {
+  analysisId           BigInt                  @id @default(autoincrement()) @map("analysis_id")
+  eventId              BigInt                  @unique @map("event_id")
+  event                Event                   @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  aiCategory           String?                 @map("ai_category") @db.VarChar(150)
+  aiSubcategories      String[]                @map("ai_subcategories")
+  extractedSkills      String[]                @map("extracted_skills")
+  targetAudience       String[]                @map("target_audience")
+  eventRelevanceScore  Decimal?                @map("event_relevance_score") @db.Decimal(5, 2)
+  qualityScore         Decimal?                @map("quality_score") @db.Decimal(5, 2)
+  trustScore           Decimal?                @map("trust_score") @db.Decimal(5, 2)
+  duplicateProbability Decimal?                @map("duplicate_probability") @db.Decimal(5, 2)
+  spamProbability      Decimal?                @map("spam_probability") @db.Decimal(5, 2)
+  verificationStatus   VerificationStatus      @default(PENDING) @map("verification_status")
+  analyzedAt           DateTime?               @default(now()) @map("analyzed_at")
+
+  @@map("event_ai_analysis")
+}
+
+model EventAnalytics {
+  analyticsId          BigInt                  @id @default(autoincrement()) @map("analytics_id")
+  eventId              BigInt                  @unique @map("event_id")
+  event                Event                   @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  views                Int                     @default(0)
+  clicks               Int                     @default(0)
+  saves                Int                     @default(0)
+  registrations        Int                     @default(0)
+  shares               Int                     @default(0)
+  engagementScore      Decimal?                @map("engagement_score") @db.Decimal(5, 2)
+  updatedAt            DateTime?               @default(now()) @map("updated_at")
+
+  @@map("event_analytics")
+}
+
+model EventParticipation {
+  participationId      BigInt                  @id @default(autoincrement()) @map("participation_id")
+  userId               BigInt                  @map("user_id")
+  user                 User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  eventId              BigInt                  @map("event_id")
+  event                Event                   @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  registrationDate     DateTime?               @map("registration_date")
+  participationStatus  String                  @default("REGISTERED") @map("participation_status") @db.VarChar(30)
+  attended             Boolean                 @default(false)
+  completed            Boolean                 @default(false)
+  completionDate       DateTime?               @map("completion_date")
+  outcome              String?                 @db.VarChar(100)
+  certificateIssued    Boolean                 @default(false) @map("certificate_issued")
+  feedbackRating       Decimal?                @map("feedback_rating") @db.Decimal(3, 2)
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @default(now()) @map("updated_at")
+
+  @@unique([userId, eventId])
+  @@map("event_participation")
+}
+
+model GithubConnection {
+  connectionId         BigInt                  @id @default(autoincrement()) @map("connection_id")
+  userId               BigInt                  @unique @map("user_id")
+  user                 User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  githubUsername       String                  @map("github_username") @db.VarChar(150)
+  githubProfileUrl     String?                 @map("github_profile_url")
+  publicReposCount     Int                     @default(0) @map("public_repos_count")
+  followersCount       Int                     @default(0) @map("followers_count")
+  followingCount       Int                     @default(0) @map("following_count")
+  topLanguages         String[]                @map("top_languages")
+  totalStars           Int                     @default(0) @map("total_stars")
+  recentCommitCount    Int                     @default(0) @map("recent_commit_count")
+  analyzedRepositories Json?                   @map("analyzed_repositories")
+  bioSummary           String?                 @map("bio_summary")
+  rawGithubData        Json?                   @map("raw_github_data")
+  connectedAt          DateTime                @default(now()) @map("connected_at")
+  lastSyncedAt         DateTime?               @map("last_synced_at")
+  updatedAt            DateTime                @default(now()) @map("updated_at")
+
+  @@map("github_connections")
+}
+
+model HackathonDetail {
+  eventId              BigInt                  @id @map("event_id")
+  event                Event                   @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  teamSizeMin          Int                     @default(1) @map("team_size_min")
+  teamSizeMax          Int                     @default(4) @map("team_size_max")
+  prizePool            Decimal?                @map("prize_pool") @db.Decimal(12, 2)
+  currency             String?                 @default("INR") @db.VarChar(10)
+  problemStatements    String[]                @map("problem_statements")
+  modeDetails          String?                 @map("mode_details")
+  judgingCriteria      String[]                @map("judging_criteria")
+
+  @@map("hackathon_details")
+}
+
+model InternshipDetail {
+  eventId              BigInt                  @id @map("event_id")
+  event                Event                   @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  companyName          String                  @map("company_name") @db.VarChar(200)
+  roleTitle            String                  @map("role_title") @db.VarChar(200)
+  stipendAmount        Decimal?                @map("stipend_amount") @db.Decimal(10, 2)
+  stipendType          String?                 @default("MONTHLY") @map("stipend_type") @db.VarChar(50)
+  durationMonths       Int?                    @map("duration_months")
+  locationType         String?                 @default("REMOTE") @map("location_type") @db.VarChar(50)
+  applicationLink      String?                 @map("application_link")
+
+  @@map("internship_details")
+}
+
+model Organizer {
+  organizerId          BigInt                  @id @default(autoincrement()) @map("organizer_id")
+  name                 String                  @db.VarChar(200)
+  email                String?                 @db.VarChar(255)
+  organizationType     String?                 @map("organization_type") @db.VarChar(100)
+  verified             Boolean                 @default(false)
+  websiteUrl           String?                 @map("website_url")
+  contactPhone         String?                 @map("contact_phone") @db.VarChar(50)
+  logoUrl              String?                 @map("logo_url")
+  createdAt            DateTime                @default(now()) @map("created_at")
+
+  events               Event[]
+
+  @@map("organizers")
+}
+
+model ProjectDetail {
+  eventId              BigInt                  @id @map("event_id")
+  event                Event                   @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  domain               String?                 @db.VarChar(150)
+  techStack            String[]                @map("tech_stack")
+  projectType          String?                 @map("project_type") @db.VarChar(100)
+  difficultyLevel      String?                 @default("MEDIUM") @map("difficulty_level") @db.VarChar(50)
+  mentorshipAvailable  Boolean                 @default(false) @map("mentorship_available")
+  githubRepoRequired   Boolean                 @default(false) @map("github_repo_required")
+
+  @@map("project_details")
+}
+
+model Recommendation {
+  recommendationId     BigInt                  @id @default(autoincrement()) @map("recommendation_id")
+  userId               BigInt                  @map("user_id")
+  user                 User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  eventId              BigInt                  @map("event_id")
+  event                Event                   @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  matchScore           Decimal                 @map("match_score") @db.Decimal(5, 2)
+  recommendationReason String?                 @map("recommendation_reason")
+  scoreBreakdown       Json?                   @map("score_breakdown")
+  createdAt            DateTime                @default(now()) @map("created_at")
+
+  @@unique([userId, eventId])
+  @@map("recommendations")
+}
+
+model SkillEvolution {
+  evolutionId          BigInt                  @id @default(autoincrement()) @map("evolution_id")
+  userId               BigInt                  @map("user_id")
+  user                 User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  skillName            String                  @map("skill_name") @db.VarChar(150)
+  previousProficiency  Decimal                 @default(0) @map("previous_proficiency") @db.Decimal(5, 2)
+  newProficiency       Decimal                 @map("new_proficiency") @db.Decimal(5, 2)
+  changeReason         String?                 @map("change_reason") @db.VarChar(255)
+  eventId              BigInt?                 @map("event_id")
+  recordedAt           DateTime                @default(now()) @map("recorded_at")
+
+  @@map("skill_evolution")
+}
+
+model StudentActivity {
+  activityId           BigInt                  @id @default(autoincrement()) @map("activity_id")
+  userId               BigInt                  @map("user_id")
+  user                 User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  title                String                  @db.VarChar(200)
+  description          String?
+  activityType         String                  @map("activity_type") @db.VarChar(100)
+  eventId              BigInt?                 @map("event_id")
+  startDate            DateTime?               @map("start_date")
+  endDate              DateTime?               @map("end_date")
+  status               String                  @default("COMPLETED") @db.VarChar(50)
+  skillsGained         String[]                @map("skills_gained")
+  source               String                  @default("MANUAL") @db.VarChar(50)
+  createdAt            DateTime                @default(now()) @map("created_at")
+
+  @@map("student_activities")
+}
+
+model StudentAiSummary {
+  summaryId            BigInt                  @id @default(autoincrement()) @map("summary_id")
+  userId               BigInt                  @unique @map("user_id")
+  user                 User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  profileSummary       String?                 @map("profile_summary")
+  strongestSkills      String[]                @map("strongest_skills")
+  emergingSkills       String[]                @map("emerging_skills")
+  interestsDetected    String[]                @map("interests_detected")
+  careerGoalsDetected  String[]                @map("career_goals_detected")
+  recommendedDomains   String[]                @map("recommended_domains")
+  githubInsights       String?                 @map("github_insights")
+  activityInsights     String?                 @map("activity_insights")
+  recommendationInsights String?               @map("recommendation_insights")
+  confidenceScore      Decimal?                @map("confidence_score") @db.Decimal(5, 2)
+  generatedAt          DateTime                @default(now()) @map("generated_at")
+  updatedAt            DateTime                @default(now()) @map("updated_at")
+
+  @@map("student_ai_summary")
+}
+
+model StudentSkill {
+  studentSkillId       BigInt                  @id @default(autoincrement()) @map("student_skill_id")
+  userId               BigInt                  @map("user_id")
+  user                 User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  skillName            String                  @map("skill_name") @db.VarChar(150)
+  skillCategory        String?                 @map("skill_category") @db.VarChar(100)
+  proficiencyScore     Decimal                 @default(0) @map("proficiency_score") @db.Decimal(5, 2)
+  confidenceScore      Decimal                 @default(0) @map("confidence_score") @db.Decimal(5, 2)
+  source               String                  @default("MANUAL") @db.VarChar(50)
+  firstDetectedAt      DateTime                @default(now()) @map("first_detected_at")
+  lastUpdatedAt        DateTime                @default(now()) @map("last_updated_at")
+  evidenceCount        Int                     @default(0) @map("evidence_count")
+
+  @@unique([userId, skillName])
+  @@map("student_skills")
+}
+
+model UserInteraction {
+  interactionId        BigInt                  @id @default(autoincrement()) @map("interaction_id")
+  userId               BigInt                  @map("user_id")
+  user                 User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  eventId              BigInt                  @map("event_id")
+  event                Event                   @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  interactionType      InteractionType         @map("interaction_type")
+  interactionTime      DateTime?               @default(now()) @map("interaction_time")
+
+  @@map("user_interactions")
+}
+
+model WorkshopDetail {
+  eventId              BigInt                  @id @map("event_id")
+  event                Event                   @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  instructorName       String?                 @map("instructor_name") @db.VarChar(200)
+  instructorExperience String?                 @map("instructor_experience")
+  workshopLevel        String?                 @map("workshop_level") @db.VarChar(50)
+  handsOn              Boolean                 @default(false) @map("hands_on")
+  certificateProvided  Boolean                 @default(false) @map("certificate_provided")
+  prerequisites        String?
+
+  @@map("workshop_details")
+}
+
+model AIRequestLog {
+  id                   String                  @id @default(uuid())
+  provider             String
+  model                String
+  requestType          String
+  inputPrompt          String
+  rawResponse          String
+  durationMs           Int
+  success              Boolean
+  errorMessage         String?
+  createdAt            DateTime                @default(now())
+
+  @@map("ai_request_logs")
+}
+
+model AIUsage {
+  id                   String                  @id @default(uuid())
+  provider             String
+  model                String
+  requestType          String
+  inputTokens          Int?
+  outputTokens         Int?
+  totalTokens          Int?
+  estimatedCost        Float?
+  success              Boolean
+  timestamp            DateTime                @default(now())
+
+  @@map("ai_usage")
+}

@@ -1,6 +1,6 @@
-import { Event, RecommendedEvent, SearchResult, SearchSuggestion } from '@/types';
+import { Event } from '@/types';
 import { mockEvents } from '@/data/mock/events';
-import { mockRecommendations } from '@/data/mock/recommendations';
+import { apiRequest } from './client';
 
 export async function getEvents(filters?: {
   category?: string;
@@ -8,7 +8,13 @@ export async function getEvents(filters?: {
   location?: string;
   search?: string;
 }): Promise<Event[]> {
-  // Future: return fetch('/api/events', { params: filters }).then(r => r.json())
+  try {
+    const params = new URLSearchParams();
+    Object.entries(filters || {}).forEach(([key, value]) => value && params.set(key, value));
+    return await apiRequest<Event[]>(`/api/events${params.toString() ? `?${params}` : ''}`);
+  } catch {
+    // Keep the demo usable when the optional backend is offline.
+  }
   let events = [...mockEvents];
 
   if (filters?.category) {
@@ -31,8 +37,7 @@ export async function getEvents(filters?: {
 }
 
 export async function getEventById(id: string): Promise<Event | undefined> {
-  // Future: return fetch(`/api/events/${id}`).then(r => r.json())
-  return mockEvents.find(e => e.id === id);
+  try { return await apiRequest<Event>(`/api/events/${id}`); } catch { return mockEvents.find(e => e.id === id); }
 }
 
 export async function getFeaturedEvents(): Promise<Event[]> {

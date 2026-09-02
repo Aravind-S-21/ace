@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Environment Variables & Secrets (CRITICAL)
+.env
+.env.local
+.env.production
+*.env
+
+# Build Output
+dist/
+build/
+
+# Logs & Temporary Files
+*.log
+scratch/
+.system_generated/
+.ds_store
+
+# Coverage & IDE
+coverage/
+.vscode/
+.idea/

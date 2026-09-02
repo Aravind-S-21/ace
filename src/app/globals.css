@@ -1,26 +1,108 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-bg-secondary: #f8fafc;
+  --color-bg-tertiary: #f1f5f9;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-tertiary: #94a3b8;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-primary: #6366f1;
+  --color-primary-dark: #4f46e5;
+  --color-primary-light: #eef2ff;
+  --color-primary-hover: #5558e6;
+  --color-success: #10b981;
+  --color-success-light: #ecfdf5;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fffbeb;
+  --color-error: #ef4444;
+  --color-error-light: #fef2f2;
+  --color-info: #3b82f6;
+  --color-info-light: #eff6ff;
+  --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Base Styles */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Focus ring utility */
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* AI accent glow (subtle) */
+.ai-glow {
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.1),
+              0 1px 3px rgba(99, 102, 241, 0.08);
+}
+
+.ai-glow:hover {
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.2),
+              0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+/* Smooth transitions */
+.transition-base {
+  transition: all 180ms ease;
+}
+
+/* Animate in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s ease forwards;
+}
+
+/* Score ring animation */
+@keyframes scoreRing {
+  from { stroke-dashoffset: 283; }
+}
+
+.animate-score-ring {
+  animation: scoreRing 1s ease forwards;
 }

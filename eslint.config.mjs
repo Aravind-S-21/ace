@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "backend/**",
+    "scratch/**",
+    "HackGuru-main/**",
+    "HackGuru-main.zip",
   ]),
 ]);
 
